@@ -16,6 +16,7 @@ Optional:
 from __future__ import annotations
 
 import os
+from pathlib import Path
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple
 
@@ -28,7 +29,8 @@ from sklearn.metrics.pairwise import cosine_similarity
 
 load_dotenv()
 
-DEFAULT_DATASET_PATH = "data/feedback_dataset.xlsx"
+BASE_DIR = Path(__file__).resolve().parent
+DEFAULT_DATASET_PATH = BASE_DIR / "data" / "feedback_dataset.xlsx"
 
 SEVERITY_SCORE = {
     "critical": 5,
@@ -103,22 +105,38 @@ def scale_1_to_10(series: pd.Series) -> pd.Series:
     return 1.0 + 9.0 * (values - min_v) / (max_v - min_v)
 
 
-def read_excel_dataset(uploaded_file: Optional[object]) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
-    """Read either uploaded workbook or bundled default workbook."""
-    source = uploaded_file if uploaded_file is not None else DEFAULT_DATASET_PATH
+def read_excel_dataset(uploaded_file: Optional[object]) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, str]:
+    """
+    Read either an uploaded workbook or the bundled default workbook.
+
+    Default behavior:
+    - If the user uploads an .xlsx file, use that file.
+    - Otherwise, use data/feedback_dataset.xlsx from the same folder as app.py.
+    - If the bundled dataset is missing, show a clear error telling the user how to fix it.
+    """
+    if uploaded_file is not None:
+        source = uploaded_file
+        dataset_source = "Uploaded workbook"
+    else:
+        source = DEFAULT_DATASET_PATH
+        dataset_source = "Default sample dataset"
+
+    if uploaded_file is None and not DEFAULT_DATASET_PATH.exists():
+        raise FileNotFoundError(
+            f"Could not find default dataset at: {DEFAULT_DATASET_PATH}\n\n"
+            "Fix: add data/feedback_dataset.xlsx to the GitHub repo, or upload a workbook from the sidebar."
+        )
+
     try:
         user_feedback = pd.read_excel(source, sheet_name="User Feedback")
         sales_notes = pd.read_excel(source, sheet_name="Sales Notes")
         market_research = pd.read_excel(source, sheet_name="Market Research")
-    except FileNotFoundError as exc:
-        raise FileNotFoundError(
-            f"Could not find {DEFAULT_DATASET_PATH}. Put the dataset at that path or upload a workbook."
-        ) from exc
     except ValueError as exc:
         raise ValueError(
-            "Workbook must contain sheets named: User Feedback, Sales Notes, Market Research."
+            "Workbook must contain sheets named exactly: User Feedback, Sales Notes, Market Research."
         ) from exc
-    return user_feedback, sales_notes, market_research
+
+    return user_feedback, sales_notes, market_research, dataset_source
 
 
 def normalize_user_feedback(df: pd.DataFrame) -> pd.DataFrame:
@@ -184,8 +202,8 @@ def normalize_market_research(df: pd.DataFrame) -> pd.DataFrame:
     return out
 
 
-def load_and_normalize(uploaded_file: Optional[object]) -> LoadedData:
-    user_feedback, sales_notes, market_research = read_excel_dataset(uploaded_file)
+def load_and_normalize(uploaded_file: Optional[object]) -> Tuple[LoadedData, str]:
+    user_feedback, sales_notes, market_research, dataset_source = read_excel_dataset(uploaded_file)
 
     normalized = pd.concat(
         [
@@ -221,7 +239,7 @@ def load_and_normalize(uploaded_file: Optional[object]) -> LoadedData:
         lambda r: f"[{r['evidence_source']}] {r['text']}", axis=1
     )
 
-    return LoadedData(user_feedback, sales_notes, market_research, normalized)
+    return LoadedData(user_feedback, sales_notes, market_research, normalized), dataset_source
 
 
 def top_evidence(group: pd.DataFrame, max_items: int = 5) -> List[str]:
@@ -459,8 +477,12 @@ def main() -> None:
 
     with st.sidebar:
         st.header("Data")
+        st.info(
+            "By default, this app uses the bundled synthetic dataset at "
+            "data/feedback_dataset.xlsx. Upload your own workbook to override it."
+        )
         uploaded_file = st.file_uploader(
-            "Upload feedback workbook",
+            "Upload your own feedback workbook",
             type=["xlsx"],
             help="Expected sheets: User Feedback, Sales Notes, Market Research",
         )
@@ -470,7 +492,8 @@ def main() -> None:
         st.write("MVP scoring combines frequency, severity, business impact, confidence, and ARR signal.")
 
     try:
-        data = load_and_normalize(uploaded_file)
+        data, dataset_source = load_and_normalize(uploaded_file)
+        st.sidebar.success(f"Using: {dataset_source}")
     except Exception as exc:
         st.error(str(exc))
         st.stop()
