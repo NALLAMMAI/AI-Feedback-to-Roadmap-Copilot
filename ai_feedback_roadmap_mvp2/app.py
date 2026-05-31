@@ -13,6 +13,9 @@ Run:
     cp .env.example .env
     streamlit run app.py
 """
+import os
+
+os.environ.setdefault("PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION", "python")
 
 from __future__ import annotations
 
