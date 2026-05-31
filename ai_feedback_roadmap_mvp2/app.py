@@ -167,14 +167,19 @@ def read_excel_from_bytes(file_bytes: Optional[bytes]) -> Tuple[pd.DataFrame, pd
         user_feedback = pd.read_excel(source, sheet_name="User Feedback")
         if file_bytes:
             source.seek(0)
+
         sales_notes = pd.read_excel(source, sheet_name="Sales Notes")
         if file_bytes:
             source.seek(0)
+
         market_research = pd.read_excel(source, sheet_name="Market Research")
+
     except FileNotFoundError as exc:
         raise FileNotFoundError(
-            f"Could not find {DEFAULT_DATASET_PATH}. Put the dataset there or upload a workbook."
+            f"Could not find default dataset at: {DEFAULT_DATASET_PATH}. "
+            "Upload a workbook or check that ai_feedback_roadmap_mvp2/data/feedback_dataset.xlsx exists."
         ) from exc
+
     except ValueError as exc:
         raise ValueError(f"Workbook must contain sheets: {', '.join(REQUIRED_SHEETS)}") from exc
 
