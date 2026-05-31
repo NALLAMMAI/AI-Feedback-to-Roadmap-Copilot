@@ -42,7 +42,8 @@ from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 load_dotenv()
 
 APP_TITLE = "AI Feedback-to-Roadmap Copilot"
-DEFAULT_DATASET_PATH = Path("data/feedback_dataset.xlsx")
+BASE_DIR = Path(__file__).resolve().parent
+DEFAULT_DATASET_PATH = BASE_DIR / "data" / "feedback_dataset.xlsx"
 CHROMA_PARENT_DIR = Path("chroma_store")
 EXPORT_DIR = Path("exports")
 
