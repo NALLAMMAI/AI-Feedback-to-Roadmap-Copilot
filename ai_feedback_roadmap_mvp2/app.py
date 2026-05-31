@@ -13,11 +13,11 @@ Run:
     cp .env.example .env
     streamlit run app.py
 """
+from __future__ import annotations
+
 import os
 
 os.environ.setdefault("PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION", "python")
-
-from __future__ import annotations
 
 import hashlib
 import io
