@@ -1,6 +1,6 @@
 # AI Feedback-to-Roadmap Copilot — MVP2
 
-This is a Streamlit MVP for an AI Product Manager portfolio project. It upgrades MVP1 into a real RAG-based workflow using:
+ It upgrades MVP1 into a real RAG-based workflow using:
 
 - **LangChain** orchestration
 - **Chroma** persistent vector database
@@ -80,11 +80,6 @@ You can upload another workbook in the app. It must contain these sheets:
 - `Sales Notes`
 - `Market Research`
 
-## Portfolio wording
-
-Use this wording:
-
-> Built a LangChain + Chroma RAG product-management assistant that ingests user feedback, sales notes, and market research, retrieves evidence with local or OpenAI embeddings, ranks roadmap opportunities by user pain and business impact, and generates evidence-backed PRDs for a developer incident management platform.
 
 ## Notes
 
